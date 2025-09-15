@@ -1,0 +1,148 @@
+{
+  "experiment_config": {
+    "name": "REE_Extension_Experiment",
+    "description": "Enhanced REE framework with semantic diversity and statistical rigor",
+    "version": "1.0.0"
+  },
+  "models": {
+    "Qwen2.5-3B-Instruct": {
+      "path": "Qwen/Qwen2.5-3B-Instruct",
+      "type": "qwen",
+      "max_seq_length": 2048,
+      "trust_remote_code": true
+    },
+    "Llama-3.2-3B-Instruct": {
+      "path": "meta-llama/Llama-3.2-3B-Instruct",
+      "type": "llama",
+      "max_seq_length": 2048,
+      "trust_remote_code": false
+    },
+    "Phi-3.5-mini-instruct": {
+      "path": "microsoft/Phi-3.5-mini-instruct",
+      "type": "phi",
+      "max_seq_length": 2048,
+      "trust_remote_code": true
+    }
+  },
+  "datasets": {
+    "GSM8K": {
+      "name": "gsm8k",
+      "train_size": 7473,
+      "test_size": 1319,
+      "domain": "mathematical_reasoning",
+      "format": "multi_strategy"
+    },
+    "MedMCQA": {
+      "name": "medmcqa",
+      "train_size": 7500,
+      "test_size": 4183,
+      "domain": "medical_reasoning",
+      "format": "multi_strategy"
+    },
+    "MATH": {
+      "name": "competition_math",
+      "train_size": 5000,
+      "test_size": 1000,
+      "domain": "competition_mathematics",
+      "format": "multi_strategy"
+    }
+  },
+  "training": {
+    "method": "GRPO",
+    "seeds": [42, 123, 456, 789, 1337],
+    "max_steps": 7500,
+    "batch_size": 1,
+    "gradient_accumulation_steps": 1,
+    "learning_rate": 5e-6,
+    "group_size": 6,
+    "max_new_tokens": 1536,
+    "temperature": 0.1,
+    "top_p": 0.95,
+    "lora_config": {
+      "r": 64,
+      "lora_alpha": 16,
+      "target_modules": ["q_proj", "v_proj", "k_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
+      "lora_dropout": 0.1,
+      "bias": "none",
+      "task_type": "CAUSAL_LM"
+    },
+    "quantization": {
+      "load_in_4bit": true,
+      "bnb_4bit_compute_dtype": "float16",
+      "bnb_4bit_use_double_quant": true,
+      "bnb_4bit_quant_type": "nf4"
+    }
+  },
+  "rewards": {
+    "outcome_correctness": {
+      "weight": 1.0,
+      "normalize": true
+    },
+    "semantic_diversity": {
+      "weight": 1.0,
+      "normalize": true,
+      "model": "all-MiniLM-L6-v2",
+      "similarity_threshold": 0.8,
+      "gamma_correct": 1.0,
+      "gamma_diversity_cap": 0.5,
+      "gamma_diversity_rate": 0.1
+    },
+    "exploitation": {
+      "weight": 1.0,
+      "normalize": true,
+      "gamma_exploitation": 1.0
+    },
+    "format_adherence": {
+      "weight": 1.0,
+      "normalize": true,
+      "gamma_strategy": 0.2,
+      "gamma_answer": 0.3,
+      "gamma_completeness": 0.1
+    }
+  },
+  "evaluation": {
+    "metrics": ["accuracy", "strategy_accuracy", "token_length", "word_length", "strategies_per_response"],
+    "confidence_level": 0.95,
+    "min_effect_size": 2.0,
+    "multiple_comparisons_correction": "bonferroni",
+    "statistical_tests": ["paired_ttest", "cohen_d", "confidence_interval"]
+  },
+  "baselines": {
+    "STaR": {
+      "enabled": true,
+      "max_rationale_attempts": 3,
+      "rationale_temperature": 0.7
+    },
+    "PPO": {
+      "enabled": true,
+      "ppo_epochs": 4,
+      "cliprange": 0.2,
+      "cliprange_value": 0.2,
+      "vf_coef": 0.1
+    },
+    "GRPO_CFL": {
+      "enabled": true,
+      "baseline_rewards": ["correctness", "format", "length"]
+    }
+  },
+  "computational_constraints": {
+    "max_gpu_hours_per_experiment": 140,
+    "max_parallel_jobs": 2,
+    "memory_limit_gb": 16,
+    "checkpoint_every_n_steps": 500,
+    "save_total_limit": 3
+  },
+  "logging": {
+    "use_wandb": true,
+    "project_name": "ree_extension",
+    "log_level": "INFO",
+    "log_every_n_steps": 50,
+    "eval_every_n_steps": 500
+  },
+  "output": {
+    "base_dir": "./experiments",
+    "checkpoint_dir": "./checkpoints",
+    "results_dir": "./results",
+    "plots_dir": "./plots"
+  }
+}
